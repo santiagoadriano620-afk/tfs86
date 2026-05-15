@@ -10,8 +10,9 @@ jobs:
     runs-on: windows-latest
 
     env:
+      VCPKG_ROOT: ${{ github.workspace }}\vcpkg
       VCPKG_DEFAULT_TRIPLET: x64-windows
-      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+      VCPKG_DISABLE_METRICS: 1
 
     steps:
       - name: Checkout repository
@@ -22,26 +23,26 @@ jobs:
       - name: Setup vcpkg
         run: |
           git clone https://github.com/microsoft/vcpkg.git $env:VCPKG_ROOT
-          cd $env:VCPKG_ROOT
-          .\bootstrap-vcpkg.bat
+          & "$env:VCPKG_ROOT\vcpkg.exe" bootstrap-vcpkg.bat
 
-      - name: Cache vcpkg packages
+      - name: Cache vcpkg installed
         uses: actions/cache@v4
         with:
           path: |
             vcpkg
-            ${{ env.VCPKG_ROOT }}/installed
-            ${{ env.VCPKG_ROOT }}/packages
+            ${{ env.VCPKG_ROOT }}\installed
+            ${{ env.VCPKG_ROOT }}\packages
+            ${{ env.VCPKG_ROOT }}\downloads
           key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
 
       - name: Install dependencies (vcpkg)
         run: |
-          $env:VCPKG_ROOT/vcpkg install --triplet x64-windows
+          & "$env:VCPKG_ROOT\vcpkg.exe" install --triplet x64-windows
 
       - name: Configure CMake
         run: |
           cmake -B build `
-            -DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake `
+            -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT\scripts\buildsystems\vcpkg.cmake" `
             -DVCPKG_TARGET_TRIPLET=x64-windows `
             -DCMAKE_BUILD_TYPE=Release
 
@@ -52,4 +53,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: tfs-windows
-          path: build/Release
+          path: build\Release
