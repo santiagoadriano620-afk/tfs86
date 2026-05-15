@@ -1,0 +1,55 @@
+name: Build Windows (TFS)
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    env:
+      VCPKG_DEFAULT_TRIPLET: x64-windows
+      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup vcpkg
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git $env:VCPKG_ROOT
+          cd $env:VCPKG_ROOT
+          .\bootstrap-vcpkg.bat
+
+      - name: Cache vcpkg packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            vcpkg
+            ${{ env.VCPKG_ROOT }}/installed
+            ${{ env.VCPKG_ROOT }}/packages
+          key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
+
+      - name: Install dependencies (vcpkg)
+        run: |
+          $env:VCPKG_ROOT/vcpkg install --triplet x64-windows
+
+      - name: Configure CMake
+        run: |
+          cmake -B build `
+            -DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake `
+            -DVCPKG_TARGET_TRIPLET=x64-windows `
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfs-windows
+          path: build/Release
