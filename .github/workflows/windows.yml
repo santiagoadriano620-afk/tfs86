@@ -23,9 +23,10 @@ jobs:
       - name: Setup vcpkg
         run: |
           git clone https://github.com/microsoft/vcpkg.git $env:VCPKG_ROOT
-          & "$env:VCPKG_ROOT\vcpkg.exe" bootstrap-vcpkg.bat
+          cd $env:VCPKG_ROOT
+          .\bootstrap-vcpkg.bat
 
-      - name: Cache vcpkg installed
+      - name: Cache vcpkg
         uses: actions/cache@v4
         with:
           path: |
