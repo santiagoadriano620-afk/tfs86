@@ -72,90 +72,6 @@ bool isInsideStoreInbox(const Cylinder* cylinder)
 	return false;
 }
 
-TextColor_t getConfiguredTextColor(ConfigManager::Integer key, TextColor_t fallbackColor)
-{
-	const int64_t color = getInteger(key);
-	if (color < 0 || color > std::numeric_limits<uint8_t>::max()) {
-		return fallbackColor;
-	}
-	return static_cast<TextColor_t>(color);
-}
-
-TextColor_t getDamageColorForCombat(CombatType_t combatType, TextColor_t fallbackColor)
-{
-	switch (combatType) {
-		case COMBAT_PHYSICALDAMAGE:
-		case COMBAT_LIFEDRAIN:
-			return getConfiguredTextColor(ConfigManager::DAMAGE_COLOR_BI, fallbackColor);
-
-		case COMBAT_ENERGYDAMAGE:
-		case COMBAT_DEATHDAMAGE:
-		case COMBAT_HOLYDAMAGE:
-		case COMBAT_MANADRAIN:
-			return getConfiguredTextColor(ConfigManager::DAMAGE_COLOR_MI, fallbackColor);
-
-		case COMBAT_EARTHDAMAGE:
-		case COMBAT_FIREDAMAGE:
-		case COMBAT_ICEDAMAGE:
-		case COMBAT_DROWNDAMAGE:
-		case COMBAT_AGONYDAMAGE:
-		case COMBAT_UNDEFINEDDAMAGE:
-			return getConfiguredTextColor(ConfigManager::DAMAGE_COLOR_TRI, fallbackColor);
-
-		default:
-			return fallbackColor;
-	}
-}
-
-TextColor_t getPlayerDamageColor(const Player* player, TextColor_t fallbackColor)
-{
-	if (!player) {
-		return fallbackColor;
-	}
-
-	const auto storedColor = player->getStorageValue(STORAGE_DAMAGE_COLOR);
-	if (!storedColor || storedColor.value() <= 0 || storedColor.value() > std::numeric_limits<uint8_t>::max()) {
-		return fallbackColor;
-	}
-
-	return static_cast<TextColor_t>(storedColor.value());
-}
-
-const Player* getDamageColorOwner(const Creature* attacker, const Player* targetPlayer)
-{
-	if (!attacker) {
-		return targetPlayer;
-	}
-
-	if (const Player* attackerPlayer = attacker->getPlayer()) {
-		return attackerPlayer;
-	}
-
-	if (const auto master = attacker->getMaster()) {
-		if (const Player* masterPlayer = master->getPlayer()) {
-			return masterPlayer;
-		}
-	}
-
-	return targetPlayer;
-}
-
-void addDamageAnimatedText(const SpectatorVec& spectators, std::string_view message, const Position& pos,
-                           CombatType_t combatType, TextColor_t fallbackColor, const Player* colorOwner)
-{
-	if (!getBoolean(ConfigManager::MODIFY_DAMAGE_IN_K)) {
-		Game::addAnimatedText(spectators, message, pos, fallbackColor);
-		return;
-	}
-
-	const TextColor_t defaultColor =
-	    getPlayerDamageColor(colorOwner, getDamageColorForCombat(combatType, fallbackColor));
-	for (const auto& spectator : spectators) {
-		Player* player = static_cast<Player*>(spectator.get());
-		player->sendAnimatedText(message, pos, getPlayerDamageColor(player, defaultColor));
-	}
-}
-
 std::string getDamageAnimatedText(int32_t value)
 {
 	if (getBoolean(ConfigManager::MODIFY_DAMAGE_IN_K)) {
@@ -5485,8 +5401,6 @@ bool Game::combatChangeHealth(Creature* attacker, Creature* target, CombatDamage
 
 		message.primary.value = damage.primary.value;
 		message.secondary.value = damage.secondary.value;
-		const Player* damageColorOwner = getDamageColorOwner(attacker, targetPlayer);
-
 		uint8_t hitEffect;
 		if (message.primary.value) {
 			combatGetTypeInfo(damage.primary.type, target, message.primary.color, hitEffect);
@@ -5495,8 +5409,7 @@ bool Game::combatChangeHealth(Creature* attacker, Creature* target, CombatDamage
 			}
 
 			if (message.primary.color != TEXTCOLOR_NONE) {
-				addDamageAnimatedText(spectators, getDamageAnimatedText(message.primary.value), targetPos,
-				                      damage.primary.type, message.primary.color, damageColorOwner);
+				addAnimatedText(spectators, getDamageAnimatedText(message.primary.value), targetPos, message.primary.color);
 			}
 		}
 
@@ -5507,8 +5420,8 @@ bool Game::combatChangeHealth(Creature* attacker, Creature* target, CombatDamage
 			}
 
 			if (message.secondary.color != TEXTCOLOR_NONE) {
-				addDamageAnimatedText(spectators, getDamageAnimatedText(message.secondary.value), targetPos,
-				                      damage.secondary.type, message.secondary.color, damageColorOwner);
+				addAnimatedText(spectators, getDamageAnimatedText(message.secondary.value), targetPos,
+				                message.secondary.color);
 			}
 		}
 

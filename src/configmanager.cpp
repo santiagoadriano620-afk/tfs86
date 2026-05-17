@@ -170,20 +170,6 @@ TextColor_t getGlobalTextColor(lua_State* L, const char* identifier, TextColor_t
 	return color;
 }
 
-TextColor_t getGlobalTextColorField(lua_State* L, const char* tableName, const char* fieldName,
-                                    TextColor_t defaultColor)
-{
-	lua_getglobal(L, tableName);
-	if (!lua_istable(L, -1)) {
-		lua_pop(L, 1);
-		return defaultColor;
-	}
-
-	lua_getfield(L, -1, fieldName);
-	TextColor_t color = getLuaTextColor(L, -1, defaultColor);
-	lua_pop(L, 2);
-	return color;
-}
 
 float getGlobalFloat(lua_State* L, const char* identifier, const float defaultValue = 0.0f)
 {
@@ -521,9 +507,6 @@ bool ConfigManager::load()
 	integers[Integer::HEALTH_GAIN_COLOUR] = getGlobalInteger(L, "healthGainColour", TEXTCOLOR_MAYABLUE);
 	integers[Integer::MANA_GAIN_COLOUR] = getGlobalInteger(L, "manaGainColour", TEXTCOLOR_MAYABLUE);
 	integers[Integer::MANA_LOSS_COLOUR] = getGlobalInteger(L, "manaLossColour", TEXTCOLOR_BLUE);
-	integers[Integer::DAMAGE_COLOR_MI] = getGlobalTextColorField(L, "damageColorMap", "mi", TEXTCOLOR_WHITE);
-	integers[Integer::DAMAGE_COLOR_BI] = getGlobalTextColorField(L, "damageColorMap", "bi", TEXTCOLOR_RED);
-	integers[Integer::DAMAGE_COLOR_TRI] = getGlobalTextColorField(L, "damageColorMap", "tri", TEXTCOLOR_ORANGE);
 	integers[Integer::DEFAULT_EXP_COLOR] = getGlobalTextColor(L, "defaultExpColor", TEXTCOLOR_WHITE);
 	integers[Integer::MAX_PROTOCOL_OUTFITS] = getGlobalInteger(L, "maxProtocolOutfits", 255);
 	integers[Integer::MAX_ADDON_ATTRIBUTES] = getGlobalInteger(L, "maxAddonAttributes", 3);

@@ -1,11 +1,19 @@
-local findInfluenced = TalkAction("/findinfluenced")
+local findInfluenced = TalkAction("/findinfluenced", "!findinfluenced")
+local cooldowns = {}
 
 function findInfluenced.onSay(player, words, param)
-    local influencedList = Game.getInfluencedCreatures()
+    -- Retrieve and merge both influenced and fiendish lists
+    local list = {}
+    for _, m in ipairs(Game.getInfluencedCreatures()) do
+        list[#list + 1] = m
+    end
+    for _, m in ipairs(Game.getFiendishCreatures()) do
+        list[#list + 1] = m
+    end
 
-    if #influencedList == 0 then
+    if #list == 0 then
         player:sendTextMessage(MESSAGE_EVENT_ORANGE,
-            "Não há criaturas influenciadas ativas no momento.")
+            "There are no active influenced or fiendish creatures at the moment.")
         return false
     end
 
@@ -13,7 +21,7 @@ function findInfluenced.onSay(player, words, param)
     local closest = nil
     local closestDist = math.huge
 
-    for _, monster in ipairs(influencedList) do
+    for _, monster in ipairs(list) do
         local mPos = monster:getPosition()
         local dist = math.abs(playerPos.x - mPos.x) + math.abs(playerPos.y - mPos.y)
                    + math.abs(playerPos.z - mPos.z) * 10
@@ -25,7 +33,7 @@ function findInfluenced.onSay(player, words, param)
 
     if not closest then
         player:sendTextMessage(MESSAGE_EVENT_ORANGE,
-            "Não há criaturas influenciadas ativas no momento.")
+            "There are no active influenced or fiendish creatures at the moment.")
         return false
     end
 
@@ -36,26 +44,34 @@ function findInfluenced.onSay(player, words, param)
 
     local direction = ""
     if math.abs(dy) > math.abs(dx) then
-        direction = dy < 0 and "Norte" or "Sul"
+        direction = dy < 0 and "North" or "South"
     elseif math.abs(dx) > math.abs(dy) then
-        direction = dx > 0 and "Leste" or "Oeste"
+        direction = dx > 0 and "East" or "West"
     else
         if dy < 0 then
-            direction = dx > 0 and "Nordeste" or "Noroeste"
+            direction = dx > 0 and "Northeast" or "Northwest"
         else
-            direction = dx > 0 and "Sudeste" or "Sudoeste"
+            direction = dx > 0 and "Southeast" or "Southwest"
         end
     end
 
+    local playerId = player:getId()
+    local cooldown = cooldowns[playerId]
+    if cooldown and cooldown > os.time() then
+        local remaining = cooldown - os.time()
+        player:sendCancelMessage(string.format("You must wait %d second%s before using this again.", remaining, remaining > 1 and "s" or ""))
+        return false
+    end
+
+    cooldowns[playerId] = os.time() + 6
+
     local monsterName = closest:getName()
-    local level = closest:getInfluencedLevel()
 
-    player:sendTextMessage(MESSAGE_EVENT_ORANGE,
+    player:sendTextMessage(MESSAGE_INFO_DESCR,
         string.format(
-            "A criatura influenciada mais próxima (%s, nível %d) está ao %s, a aproximadamente %d SQMs de você.",
-            monsterName, level, direction, sqmDist))
-
+            "The nearest influenced creature is to the %s, approximately %d SQMs from you.",
+            direction, sqmDist))
+    player:getPosition():sendMagicEffect(CONST_ME_MAGIC_RED)
     return false
 end
-findInfluenced:separator(" ")
 findInfluenced:register()

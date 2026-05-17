@@ -10,8 +10,3 @@ modifyDamageInK = false
 modifyExpInK = false
 defaultExpColor = "white"
 defaultHealthDisplay = "real"
-damageColorMap = {
-	mi = TEXTCOLOR_WHITE,
-	bi = TEXTCOLOR_RED,
-	tri = TEXTCOLOR_ORANGE,
-}

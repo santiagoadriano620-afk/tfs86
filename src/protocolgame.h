@@ -326,6 +326,7 @@ private:
 	bool isOTCv8 = false;
 	bool isMehah = false;
 	bool isOTC = false;
+	bool useItemTierByte = false;
 	bool debugAssertSent = false;
 	bool acceptPackets = false;
 

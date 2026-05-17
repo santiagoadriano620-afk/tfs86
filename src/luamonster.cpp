@@ -453,6 +453,31 @@ int luaMonsterSetInfluenced(lua_State* L)
 	return 1;
 }
 
+int luaMonsterIsFiendish(lua_State* L)
+{
+	// monster:isFiendish()
+	const Monster* monster = getUserdata<const Monster>(L, 1);
+	if (monster) {
+		pushBoolean(L, monster->isFiendish());
+	} else {
+		lua_pushnil(L);
+	}
+	return 1;
+}
+
+int luaMonsterSetFiendish(lua_State* L)
+{
+	// monster:setFiendish(bool)
+	Monster* monster = getUserdata<Monster>(L, 1);
+	if (monster) {
+		monster->setFiendish(getBoolean(L, 2));
+		pushBoolean(L, true);
+	} else {
+		lua_pushnil(L);
+	}
+	return 1;
+}
+
 int luaMonsterGetInfluencedLevel(lua_State* L)
 {
 	// monster:getInfluencedLevel()
@@ -535,6 +560,8 @@ void LuaScriptInterface::registerMonster()
 
 	registerMethod("Monster", "isInfluenced", luaMonsterIsInfluenced);
 	registerMethod("Monster", "setInfluenced", luaMonsterSetInfluenced);
+	registerMethod("Monster", "isFiendish", luaMonsterIsFiendish);
+	registerMethod("Monster", "setFiendish", luaMonsterSetFiendish);
 	registerMethod("Monster", "getInfluencedLevel", luaMonsterGetInfluencedLevel);
 	registerMethod("Monster", "setInfluencedLevel", luaMonsterSetInfluencedLevel);
 	registerMethod("Monster", "getLevel", luaMonsterGetLevel);

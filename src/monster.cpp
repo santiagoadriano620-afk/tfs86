@@ -110,6 +110,9 @@ namespace monster_level {
 
 Skulls_t Monster::getSkull() const
 {
+	if (fiendish) {
+		return SKULL_RED;
+	}
 	if (influenced) {
 		return SKULL_GREEN;
 	}
@@ -119,6 +122,12 @@ Skulls_t Monster::getSkull() const
 void Monster::setInfluenced(bool v)
 {
 	influenced = v;
+	g_game.updateCreatureSkull(this);
+}
+
+void Monster::setFiendish(bool v)
+{
+	fiendish = v;
 	g_game.updateCreatureSkull(this);
 }
 
@@ -566,7 +575,7 @@ void Monster::updateTargetList()
 	std::erase_if(targetList, [this](const auto& weakRef) {
 		auto creature = weakRef.lock();
 		return !creature || creature->isDead() || !canSee(creature->getPosition()) ||
-		       (!isFamiliar() && creature->getZone() == ZONE_PROTECTION);
+		       (!isFamiliar() && creature->getZone() == ZONE_PROTECTION) || !isOpponent(creature.get());
 	});
 
 	SpectatorVec spectators;
@@ -623,6 +632,30 @@ void Monster::onCreatureEnter(Creature* creature)
 	}
 
 	onCreatureFound(creature, true);
+
+	if (creature->getPlayer()) {
+		// A player entered, we might need to notice other monsters now
+		updateTargetList();
+	}
+}
+
+
+bool Monster::hasPlayerNearby(int32_t range /* = 20*/) const
+{
+	if (g_game.getPlayersOnline() == 0) {
+		return false;
+	}
+
+	uint64_t currentTime = OTSYS_TIME();
+	if (lastPlayerNearbyCheck == currentTime) {
+		return cachedPlayerNearby;
+	}
+
+	SpectatorVec spectators;
+	g_game.map.getSpectators(spectators, position, true, true, range, range, range, range);
+	cachedPlayerNearby = !spectators.empty();
+	lastPlayerNearbyCheck = currentTime;
+	return cachedPlayerNearby;
 }
 
 bool Monster::isFriend(const Creature* creature) const
@@ -669,20 +702,22 @@ bool Monster::isOpponent(const Creature* creature) const
 		return false;
 	}
 
+	auto creatureMaster = creature->getMaster();
+	if ((creature->getPlayer() && !creature->getPlayer()->hasFlag(PlayerFlag_IgnoredByMonsters)) ||
+	    (creatureMaster && creatureMaster->getPlayer())) {
+		return true;
+	}
+
 	if (mType->info.enemyFactions.count(creature->getFaction()) > 0) {
+		if (creature->getMonster() && !creature->isSummon() && !hasPlayerNearby(20)) {
+			return false;
+		}
 		return true;
 	}
 
 	auto master = getMaster();
 	if (isSummon() && master && master->getPlayer()) {
-		// Familiars follow their master through followCreature; the master is never an opponent.
 		if (creature != master.get()) {
-			return true;
-		}
-	} else {
-		auto creatureMaster = creature->getMaster();
-		if ((creature->getPlayer() && !creature->getPlayer()->hasFlag(PlayerFlag_IgnoredByMonsters)) ||
-		    (creatureMaster && creatureMaster->getPlayer())) {
 			return true;
 		}
 	}
@@ -721,6 +756,11 @@ void Monster::onCreatureLeave(Creature* creature)
 				walkToSpawn();
 			}
 		}
+	}
+
+	if (creature->getPlayer()) {
+		// A player left, we might need to stop fighting other monsters
+		updateTargetList();
 	}
 }
 
@@ -954,10 +994,14 @@ void Monster::onFollowCreatureComplete(const Creature* creature)
 }
 
 BlockType_t Monster::blockHit(const std::shared_ptr<Creature>& attacker, CombatType_t combatType, int32_t& damage,
-                              bool checkDefense /* = false*/, bool checkArmor /* = false*/, bool /* field = false */,
-                              bool /* ignoreResistances = false */)
+                              bool checkDefense /* = false*/, bool checkArmor /* = false*/, bool field /* = false */,
+                              bool ignoreResistances /* = false */)
 {
-	BlockType_t blockType = Creature::blockHit(attacker, combatType, damage, checkDefense, checkArmor);
+	BlockType_t blockType = Creature::blockHit(attacker, combatType, damage, checkDefense, checkArmor, field, ignoreResistances);
+
+	if (field) {
+		ignoreFieldDamage = true;
+	}
 
 	if (damage != 0) {
 		int32_t elementMod = 0;
@@ -1107,6 +1151,10 @@ void Monster::onThink(uint32_t interval)
 
 		if (!isIdle) {
 			addEventWalk();
+
+			if (getAttackedCreatureShared() && getTimeSinceLastMove() >= 3000) {
+				ignoreFieldDamage = true;
+			}
 
 			if (isSummon()) {
 				auto master = getMaster();
@@ -2104,7 +2152,7 @@ bool Monster::canWalkTo(Position pos, Direction direction) const
 	if (isInSpawnRange(pos)) {
 		Tile* tile = g_game.map.getTile(pos);
 		uint32_t pathFlags = FLAG_PATHFINDING;
-		if (isFamiliar()) {
+		if (isFamiliar() || ignoreFieldDamage) {
 			pathFlags |= FLAG_IGNOREFIELDDAMAGE;
 		}
 		if (isSummon() && !isFamiliar() && tile && tile->hasFlag(TILESTATE_PROTECTIONZONE)) {
@@ -2298,7 +2346,15 @@ void Monster::death(Creature*)
 
 std::shared_ptr<Item> Monster::getCorpse(Creature* lastHitCreature, Creature* mostDamageCreature)
 {
-	auto corpse = Creature::getCorpse(lastHitCreature, mostDamageCreature);
+	std::shared_ptr<Item> corpse;
+	if (isRewardBoss()) {
+		corpse = Item::CreateItemAsContainer(getLookCorpse(), 1);
+	}
+
+	if (!corpse) {
+		corpse = Creature::getCorpse(lastHitCreature, mostDamageCreature);
+	}
+
 	if (corpse) {
 		if (mostDamageCreature) {
 			if (mostDamageCreature->getPlayer()) {
@@ -2413,10 +2469,6 @@ void Monster::setNormalCreatureLight() { internalLight = mType->info.light; }
 void Monster::drainHealth(const std::shared_ptr<Creature>& attacker, int32_t damage)
 {
 	Creature::drainHealth(attacker, damage);
-
-	if (damage > 0 && randomStepping) {
-		ignoreFieldDamage = true;
-	}
 
 	if (isInvisible()) {
 		removeCondition(CONDITION_INVISIBLE);

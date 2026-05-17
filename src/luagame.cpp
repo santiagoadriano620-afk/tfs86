@@ -1117,6 +1117,21 @@ int luaGameGetInfluencedCreatures(lua_State* L)
 	return 1;
 }
 
+int luaGameGetFiendishCreatures(lua_State* L)
+{
+	// Game.getFiendishCreatures()
+	lua_createtable(L, 0, 0);
+	int index = 0;
+	for (const auto& [id, monster] : g_game.getMonsters()) {
+		if (auto monsterRef = monster.lock(); monsterRef && monsterRef->isFiendish()) {
+			pushUserdata<Monster>(L, monsterRef.get());
+			setCreatureMetatable(L, -1, monsterRef.get());
+			lua_rawseti(L, -2, ++index);
+		}
+	}
+	return 1;
+}
+
 // ─── Spy System Lua Bindings ────────────────────────────────────────────
 
 int luaGameStartSpy(lua_State* L)
@@ -1252,6 +1267,7 @@ void LuaScriptInterface::registerGame()
 	registerMethod("Game", "getInstanceArea", luaGameGetInstanceArea);
 
 	registerMethod("Game", "getInfluencedCreatures", luaGameGetInfluencedCreatures);
+	registerMethod("Game", "getFiendishCreatures", luaGameGetFiendishCreatures);
 	registerMethod("Game", "getBoostedCreature", luaGameGetBoostedCreature);
 	registerMethod("Game", "setBoostedCreature", luaGameSetBoostedCreature);
 

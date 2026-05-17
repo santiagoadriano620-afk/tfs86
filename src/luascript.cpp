@@ -1413,7 +1413,6 @@ void LuaScriptInterface::registerFunctions()
 	registerGlobalVariable("STORAGE_FAMILIAR_TIMER_60", STORAGE_FAMILIAR_TIMER_60);
 	registerGlobalVariable("STORAGE_EXP_COLOR", STORAGE_EXP_COLOR);
 	registerGlobalVariable("STORAGE_HEALTH_DISPLAY", STORAGE_HEALTH_DISPLAY);
-	registerGlobalVariable("STORAGE_DAMAGE_COLOR", STORAGE_DAMAGE_COLOR);
 	registerGlobalVariable("FORGE_SYSTEM_ENABLED", ConfigManager::FORGE_SYSTEM_ENABLED);
 	registerGlobalVariable("IMBUEMENT_SYSTEM_ENABLED", ConfigManager::IMBUEMENT_SYSTEM_ENABLED);
 	registerGlobalVariable("MONK_VOCATION_ENABLED", ConfigManager::MONK_VOCATION_ENABLED);
@@ -2682,9 +2681,6 @@ void LuaScriptInterface::registerFunctions()
 	registerEnumIn("configKeys", ConfigManager::BOOSTED_EXP_MULTIPLIER);
 	registerEnumIn("configKeys", ConfigManager::BOOSTED_LOOT_MULTIPLIER);
 	registerEnumIn("configKeys", ConfigManager::BOOSTED_SPAWN_MULTIPLIER);
-	registerEnumIn("configKeys", ConfigManager::DAMAGE_COLOR_MI);
-	registerEnumIn("configKeys", ConfigManager::DAMAGE_COLOR_BI);
-	registerEnumIn("configKeys", ConfigManager::DAMAGE_COLOR_TRI);
 	registerEnumIn("configKeys", ConfigManager::DEFAULT_EXP_COLOR);
 
 	// os

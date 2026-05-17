@@ -1,6 +1,6 @@
 local action = Action()
 
-local upFloorIds = {1948, 1968, 5542}
+local upFloorIds = {1948, 1968, 5542, 20474, 20475, 31262, 34243, 48493, 48494, 50122, 50123}
 function action.onUse(player, item, fromPosition, target, toPosition, isHotkey)
 	if table.contains(upFloorIds, item.itemid) then
 		fromPosition:moveUpstairs()
@@ -17,5 +17,5 @@ function action.onUse(player, item, fromPosition, target, toPosition, isHotkey)
 	return true
 end
 
-action:id(435, 1931, 1948, 1968, 5542)
+action:id(435, 1931, 1948, 1968, 5542, 20474, 20475, 31262, 34243, 48493, 48494, 50122, 50123)
 action:register()

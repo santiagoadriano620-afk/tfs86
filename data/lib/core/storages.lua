@@ -25,7 +25,6 @@ PlayerStorageKeys = {
     guildLeaderChatCooldown = 50001,
     expColor = 50100,
     healthDisplay = 50101,
-    damageColor = 50102,
 
     -- Forge system
     forgeDust = 10000,
@@ -48,7 +47,6 @@ PlayerStorageKeys = {
 
 STORAGE_EXP_COLOR = PlayerStorageKeys.expColor
 STORAGE_HEALTH_DISPLAY = PlayerStorageKeys.healthDisplay
-STORAGE_DAMAGE_COLOR = PlayerStorageKeys.damageColor
 
 GlobalStorageKeys = {
     workbench = 30050,

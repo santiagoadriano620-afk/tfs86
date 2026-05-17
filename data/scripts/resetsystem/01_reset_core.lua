@@ -1,4 +1,16 @@
 local STORAGE_RESET_LASTTIME = 91000
+local RESET_KICK_DELAY = 3000
+local RESET_KICK_DELAY_SECONDS = math.floor(RESET_KICK_DELAY / 1000)
+
+local function scheduleResetKick(player)
+	local playerId = player:getId()
+	addEvent(function(id)
+		local onlinePlayer = Player(id)
+		if onlinePlayer then
+			onlinePlayer:remove()
+		end
+	end, RESET_KICK_DELAY, playerId)
+end
 
 function doPlayerReset(player)
 	local currentResets = player:getResetCount()
@@ -54,8 +66,12 @@ function doPlayerReset(player)
 	ResetBonusConfig.applyBonuses(player)
 
 	local newResets = player:getResetCount()
+	local resetText = newResets == 1 and "reset" or "resets"
 	player:sendTextMessage(MESSAGE_EVENT_ADVANCE,
-		"Reset done! You now have " .. newResets .. " reset(s).")
+		"Congratulations. Your character has been reset successfully. You now have " .. newResets .. " " .. resetText .. ". " ..
+		"You will be disconnected in " .. RESET_KICK_DELAY_SECONDS .. " seconds so the changes can take effect. Please log in again.")
+
+	scheduleResetKick(player)
 
 	return true
 end

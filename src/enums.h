@@ -468,7 +468,6 @@ inline constexpr int32_t STORAGE_FAMILIAR_TIMER_10 = 845233;
 inline constexpr int32_t STORAGE_FAMILIAR_TIMER_60 = 845234;
 inline constexpr int32_t STORAGE_EXP_COLOR = 50100;
 inline constexpr int32_t STORAGE_HEALTH_DISPLAY = 50101;
-inline constexpr int32_t STORAGE_DAMAGE_COLOR = 50102;
 
 enum ReturnValue
 {

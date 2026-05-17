@@ -104,7 +104,7 @@ void NetworkMessage::addItemId(uint16_t itemId)
 	add<uint16_t>(clientId);
 }
 
-void NetworkMessage::addItem(uint16_t id, uint8_t count)
+void NetworkMessage::addItem(uint16_t id, uint8_t count, bool sendTier, bool alwaysSendTier)
 {
 	addItemId(id);
 
@@ -114,9 +114,13 @@ void NetworkMessage::addItem(uint16_t id, uint8_t count)
 	} else if (it.isSplash() || it.isFluidContainer()) {
 		addByte(fluidMap[count & 7]);
 	}
+
+	if (sendTier && (alwaysSendTier || it.classification > 0)) {
+		addByte(static_cast<uint8_t>(it.tier));
+	}
 }
 
-void NetworkMessage::addItem(const Item* item)
+void NetworkMessage::addItem(const Item* item, bool sendTier, bool alwaysSendTier)
 {
 	addItemId(item->getID());
 
@@ -125,5 +129,9 @@ void NetworkMessage::addItem(const Item* item)
 		addByte(static_cast<uint8_t>(std::min<uint16_t>(0xFF, item->getItemCount())));
 	} else if (it.isSplash() || it.isFluidContainer()) {
 		addByte(fluidMap[item->getFluidType() & 7]);
+	}
+
+	if (sendTier && (alwaysSendTier || it.classification > 0)) {
+		addByte(item->getTier());
 	}
 }

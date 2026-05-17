@@ -56,9 +56,34 @@ local RESOURCE_INVENTORY = 1
 local RESOURCE_PREY = 10
 
 local preyCache = {}
+local preySchemaChecked = false
 
 local function supportsCustomNetwork(player)
 	return player and player.isUsingOtClient and player:isUsingOtClient()
+end
+
+local function ensurePreySchema()
+	if preySchemaChecked then
+		return
+	end
+
+	local query = db.storeQuery(
+		"SELECT COUNT(*) AS `count` FROM `information_schema`.`COLUMNS`"
+		.. " WHERE `TABLE_SCHEMA` = DATABASE()"
+		.. " AND `TABLE_NAME` = 'player_prey'"
+		.. " AND `COLUMN_NAME` = 'list_reroll_used'"
+	)
+	local exists = false
+	if query ~= false then
+		exists = result.getDataInt(query, "count") > 0
+		result.free(query)
+	end
+
+	if not exists then
+		db.query("ALTER TABLE `player_prey` ADD `list_reroll_used` TINYINT(1) NOT NULL DEFAULT 0")
+	end
+
+	preySchemaChecked = true
 end
 
 PreySystem = PreySystem or {}
@@ -119,6 +144,8 @@ local function defaultSlot()
 end
 
 local function ensurePlayerRows(playerGuid)
+	ensurePreySchema()
+
 	for slot = 0, PREY_SLOTS - 1 do
 		db.query(string.format(
 			"INSERT IGNORE INTO `player_prey` (`player_id`, `slot`, `state`, `list_monsters`, `reroll_at`, `list_reroll_used`) VALUES (%d, %d, %d, '', 0, 0)",
@@ -217,6 +244,8 @@ local function loadPreyFromDB(playerGuid)
 end
 
 local function saveSlotToDB(playerGuid, slot, slotData, wildcards)
+	ensurePreySchema()
+
 	db.asyncQuery(string.format(
 		"INSERT INTO `player_prey` (`player_id`, `slot`, `state`, `monster_name`, `bonus_type`, `bonus_value`, `time_left`, `list_monsters`, `reroll_at`, `wildcards`, `list_reroll_used`) " ..
 		"VALUES (%d, %d, %d, %s, %d, %d, %d, %s, %d, %d, %d) " ..

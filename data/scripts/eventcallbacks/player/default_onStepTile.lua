@@ -7,6 +7,10 @@ event.onStepTile = function(self, fromPosition, toPosition)
 		self:sendTextMessage(MESSAGE_EVENT_ADVANCE, "You can't move while you train, the training has stopped.")
 		return true
 	end
+
+	if CustomForge and CustomForge.isOpen(self) then
+		CustomForge.close(self)
+	end
 	return true
 end
 

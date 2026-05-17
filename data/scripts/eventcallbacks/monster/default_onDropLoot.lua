@@ -94,7 +94,7 @@ event.onDropLoot = function(self, corpse)
 
 		if player then
 			local preyLootText = preyLootBonus > 0 and (" (Prey Improved Loot +%d%%)"):format(preyLootBonus) or ""
-			local text = ("Loot of %s: %s%s"):format(mType:getNameDescription(),
+			local text = ("Loot of %s: %s%s."):format(mType:getNameDescription(),
 			                                         corpse:getContentDescription(), preyLootText)
 			local party = player:getParty()
 			if party then

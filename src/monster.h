@@ -93,6 +93,8 @@ public:
 	void setInfluenced(bool v);
 	uint8_t getInfluencedLevel() const { return influencedLevel; }
 	void setInfluencedLevel(uint8_t level) { influencedLevel = level; }
+	bool isFiendish() const { return fiendish; }
+	void setFiendish(bool v);
 	Skulls_t getSkull() const override;
 	int32_t getLevel() const { return level; }
 
@@ -160,6 +162,7 @@ public:
 	bool isFriend(const Creature* creature) const;
 	bool isOpponent(const Creature* creature) const;
 	bool isFamiliar() const;
+	bool hasPlayerNearby(int32_t range = 20) const;
 
 	void addFriend(Creature* creature);
 	bool setType(const std::shared_ptr<MonsterType>& newType, bool restoreHealth = false);
@@ -200,6 +203,7 @@ private:
 	bool walkingToSpawn = false;
 	bool influenced = false;
 	uint8_t influencedLevel = 0;
+	bool fiendish = false;
 
 	void onCreatureEnter(Creature* creature);
 	void onCreatureLeave(Creature* creature);
@@ -207,6 +211,8 @@ private:
 	void onCreatureFound(Creature* creature, bool pushFront = false);
 
 	void updateLookDirection();
+	mutable uint64_t lastPlayerNearbyCheck = 0;
+	mutable bool cachedPlayerNearby = false;
 
 	void updateTargetList();
 	void clearTargetList();

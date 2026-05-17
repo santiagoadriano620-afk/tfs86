@@ -70,6 +70,14 @@ function event.onGainExperience(player, source, exp, rawExp, sendText)
 		end
 	end
 
+	-- Influenced Monster Multiplier
+	if source and source:isMonster() and source:isInfluenced() then
+		local level = source:getInfluencedLevel()
+		local multipliers = {2, 4, 6, 8, 10}
+		local mult = multipliers[level] or 1
+		exp = exp * mult
+	end
+
 	return exp
 end
 

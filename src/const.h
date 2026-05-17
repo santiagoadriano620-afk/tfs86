@@ -798,7 +798,10 @@ enum class GameFeature : uint8_t {
 	PacketSizeU32 = 110,
 	PacketCompression = 111,
 
-	Last = 120
+	ThingUpgradeClassification = 130,
+	ItemTierByte = 131,
+
+	Last = 132
 };
 
 inline constexpr int32_t CHANNEL_GUILD = 0x00;
