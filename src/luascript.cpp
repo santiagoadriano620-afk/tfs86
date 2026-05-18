@@ -1275,6 +1275,18 @@ void Lua::pushReflect(lua_State* L, const Reflect& reflect)
 		                 static_cast<int64_t>(value)); \
 	}
 
+/**
+ * @brief Register the full Lua scripting API into the interface's Lua state.
+ *
+ * Populates the global Lua environment and registry with server-facing functions, tables,
+ * enums, global variables, and userdata class/metatable registrations required by scripts.
+ * This includes core utility functions (items, combat, events, world/config/database access),
+ * config key entries, a comprehensive set of enum constants, helper tables/methods (os/table),
+ * and initialization of all module bindings (game, item, creature, combat, conditions, XML, etc.).
+ *
+ * The function mutates the interface's lua_State by creating globals, registering C functions,
+ * and storing metatables/references used by script execution and scheduled timer events.
+ */
 void LuaScriptInterface::registerFunctions()
 {
 	// doPlayerAddItem(uid, itemid, <optional: default: 1> count/subtype)
@@ -2005,6 +2017,7 @@ void LuaScriptInterface::registerFunctions()
 	registerEnum(ITEM_ATTRIBUTE_ATTACK_SPEED);
 	registerEnum(ITEM_ATTRIBUTE_CLASSIFICATION);
 	registerEnum(ITEM_ATTRIBUTE_TIER);
+	registerEnum(ITEM_ATTRIBUTE_CUSTOM);
 	registerEnum(ITEM_ATTRIBUTE_REWARDID);
 	registerEnum(ITEM_ATTRIBUTE_DURATION_MIN);
 	// registerEnum(ITEM_ATTRIBUTE_DURATION_MAX); // Removed due to overflow
