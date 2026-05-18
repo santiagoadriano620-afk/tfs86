@@ -112,7 +112,7 @@ find_package(PugiXML CONFIG REQUIRED)
 if (USE_LUAJIT)
     find_package(LuaJIT REQUIRED)
 else ()
-    find_package(Lua "5.5" REQUIRED)
+    find_package(Lua REQUIRED)
 endif ()
 
 if (APPLE)

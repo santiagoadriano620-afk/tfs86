@@ -1254,13 +1254,16 @@ local function refreshMarketStatistics()
 	db.query("DELETE FROM `market_statistics`")
 
 	return db.query(
-		"REPLACE INTO `market_statistics` (`itemtype`, `sale`, `day`, `transactions`, `total_price`, `highest_price`, `lowest_price`) " ..
-		"SELECT `itemtype`, `sale`, FLOOR(`inserted` / 86400) * 86400 AS `stat_day`, COUNT(*) AS `transactions`, " ..
-		"CASE WHEN SUM(`amount`) > 0 THEN FLOOR((SUM(`price` * `amount`) / SUM(`amount`)) * COUNT(*)) ELSE 0 END AS `total_price`, " ..
-		"MAX(`price`) AS `highest_price`, MIN(`price`) AS `lowest_price` FROM `market_history` " ..
+	"REPLACE INTO `market_statistics` (`itemtype`, `sale`, `day`, `transactions`, `total_price`, `highest_price`, `lowest_price`) " ..
+	"SELECT t.`itemtype`, t.`sale`, t.`day`, COUNT(*) AS `transactions`, " ..
+	"CASE WHEN SUM(t.`amount`) > 0 THEN FLOOR((SUM(t.`price` * t.`amount`) / SUM(t.`amount`)) * COUNT(*)) ELSE 0 END AS `total_price`, " ..
+	"MAX(t.`price`) AS `highest_price`, MIN(t.`price`) AS `lowest_price` " ..
+	"FROM (" ..
+		"SELECT `itemtype`, `sale`, `price`, `amount`, FLOOR(`inserted` / 86400) * 86400 AS `day` " ..
+		"FROM `market_history` " ..
 		"WHERE `state` = " .. MARKET_STATE_ACCEPTED .. " AND `inserted` >= " .. firstDay ..
-		" GROUP BY `itemtype`, `sale`, FLOOR(`inserted` / 86400)"
-	)
+	") AS t " ..
+	"GROUP BY t.`itemtype`, t.`sale`, t.`day`")
 end
 
 local function writeStatistics(out, stats)

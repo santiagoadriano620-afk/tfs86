@@ -205,3 +205,5 @@ tfs
 *.emmyrc.jsondata/scripts/meus/
 build-valgrind-linux/
 /data/world
+/data/world
+/data/world2
